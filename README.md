@@ -10,7 +10,7 @@ This tool lets you explore different pattern types on both the top and bottom pa
 
 ## Example
 
-This is an example enclosure printed using patterns produced by this tool (thanks Oolong for the printing assistance!).
+This is an example enclosure printed using patterns produced by this tool (thanks Oolong for the printing assistance!). This was printed using a Bambu Lab H2D.
 
 <img src="https://github.com/user-attachments/assets/6697f9e4-2bee-4214-bb2c-6fcf970081bc" width="50%" />
 <img src="https://github.com/user-attachments/assets/4c5e6b97-329e-4f95-aade-ab10069bd534" width="50%" />
