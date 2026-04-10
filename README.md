@@ -2,22 +2,22 @@
 
 A browser-based tool for designing two-color hexagonal patterns on the [Estim Hero](https://shop.impudicus.net/) electrostimulation device enclosure. Preview patterns in real-time on the actual panel geometry, then use the included 3MF files to print.
 
-## Quick Start
+## Demo
+
+The pattern designer is available at **https://psynapps.github.io/estimhero-enclosure/**.
+
+## Development
+
+If you want to modify the tool locally:
 
 ```bash
+git clone https://github.com/PsynApps/estimhero-enclosure.git
+cd estimhero-enclosure
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173 to launch the designer.
-
-To build for production:
-
-```bash
-npm run build
-```
-
-This outputs static files to `dist/` which can be deployed anywhere (GitHub Pages, Netlify, etc.).
+This starts a dev server at http://localhost:5173. Run `npm run build` to produce static files in `dist/`.
 
 ## About
 
