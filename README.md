@@ -6,6 +6,13 @@ A browser-based tool for designing two-color hexagonal patterns on the [Estim He
 
 The pattern designer can be found at **https://psynapps.github.io/estimhero-enclosure/**.
 
+## Example
+
+This is an example enclosure printed using patterns produced by this tool.
+
+<img src="https://github.com/user-attachments/assets/6697f9e4-2bee-4214-bb2c-6fcf970081bc" width="50%" />
+<img src="https://github.com/user-attachments/assets/4c5e6b97-329e-4f95-aade-ab10069bd534" width="50%" />
+
 ## Development
 
 If you want to modify the tool locally:
