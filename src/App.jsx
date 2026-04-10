@@ -643,20 +643,73 @@ function serializePreset({ panel, pattern, inv, showVents, centerX, centerY, col
 
 function deserializePreset(json) {
   const d = JSON.parse(json);
-  if (!d || typeof d !== 'object') throw new Error('Invalid preset: expected an object');
-  if (!d.pattern || !PATTERNS[d.pattern]) throw new Error(`Unknown pattern: "${d.pattern}"`);
-  // Validate pattern params
-  const pat = PATTERNS[d.pattern];
-  if (d.params && pat.params) {
-    for (const key of Object.keys(d.params)) {
-      const def = pat.params.find(p => p.n === key);
-      if (!def) throw new Error(`Unknown parameter "${key}" for pattern "${d.pattern}"`);
-      const v = d.params[key];
-      if (typeof v === 'number' && (v < def.min || v > def.max)) {
-        throw new Error(`Parameter "${key}" value ${v} out of range [${def.min}, ${def.max}]`);
+  if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Error('Invalid preset: expected a JSON object');
+
+  // Check for unsupported top-level fields
+  const validKeys = new Set(['panel', 'pattern', 'invert', 'showVents', 'centerX', 'centerY', 'colors', 'params']);
+  for (const key of Object.keys(d)) {
+    if (!validKeys.has(key)) throw new Error(`Unknown field: "${key}"`);
+  }
+
+  // Required: pattern
+  if (!('pattern' in d)) throw new Error('Missing required field: "pattern"');
+  if (typeof d.pattern !== 'string' || !PATTERNS[d.pattern]) {
+    throw new Error(`Unknown pattern: "${d.pattern}". Valid patterns: ${Object.keys(PATTERNS).join(', ')}`);
+  }
+
+  // Optional field type checks
+  if ('panel' in d && !['top', 'bottom'].includes(d.panel)) {
+    throw new Error(`Invalid panel: "${d.panel}". Must be "top" or "bottom"`);
+  }
+  if ('invert' in d && typeof d.invert !== 'boolean') {
+    throw new Error('"invert" must be true or false');
+  }
+  if ('showVents' in d && typeof d.showVents !== 'boolean') {
+    throw new Error('"showVents" must be true or false');
+  }
+  for (const key of ['centerX', 'centerY']) {
+    if (key in d) {
+      if (typeof d[key] !== 'number' || d[key] < 0 || d[key] > 100) {
+        throw new Error(`"${key}" must be a number between 0 and 100`);
       }
     }
   }
+
+  // Validate colors
+  if ('colors' in d) {
+    if (!d.colors || typeof d.colors !== 'object') throw new Error('"colors" must be an object');
+    const hexRe = /^#[0-9a-fA-F]{6}$/;
+    for (const key of Object.keys(d.colors)) {
+      if (!['base', 'color1', 'color2'].includes(key)) {
+        throw new Error(`Unknown color: "${key}". Valid colors: base, color1, color2`);
+      }
+      if (typeof d.colors[key] !== 'string' || !hexRe.test(d.colors[key])) {
+        throw new Error(`Invalid color value for "${key}": must be a hex color like "#4A90D9"`);
+      }
+    }
+  }
+
+  // Validate pattern params
+  const pat = PATTERNS[d.pattern];
+  if ('params' in d) {
+    if (!d.params || typeof d.params !== 'object') throw new Error('"params" must be an object');
+    if (pat.params) {
+      for (const key of Object.keys(d.params)) {
+        const def = pat.params.find(p => p.n === key);
+        if (!def) throw new Error(`Unknown parameter "${key}" for pattern "${d.pattern}"`);
+        const v = d.params[key];
+        if (def.type === 'text') {
+          if (typeof v !== 'string') throw new Error(`Parameter "${key}" must be a string`);
+        } else {
+          if (typeof v !== 'number') throw new Error(`Parameter "${key}" must be a number`);
+          if (v < def.min || v > def.max) {
+            throw new Error(`Parameter "${key}" value ${v} out of range [${def.min}, ${def.max}]`);
+          }
+        }
+      }
+    }
+  }
+
   return d;
 }
 
