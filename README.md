@@ -4,7 +4,7 @@ A browser-based tool for designing two-color hexagonal patterns on the [Estim He
 
 ## Demo
 
-The pattern designer is available at **https://psynapps.github.io/estimhero-enclosure/**.
+The pattern designer can be found at **https://psynapps.github.io/estimhero-enclosure/**.
 
 ## Development
 
