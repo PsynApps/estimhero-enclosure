@@ -1,7 +1,7 @@
 {
   "name": "estimhero-enclosure",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Browser-based tool for designing two-color hexagonal patterns on the Estim Hero enclosure",
   "author": "Psynapse",
   "license": "MIT",

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Estim Hero Pattern Preset",
+  "description": "A saved preset for the Estim Hero enclosure pattern designer",
+  "type": "object",
+  "required": ["pattern"],
+  "properties": {
+    "panel": {
+      "type": "string",
+      "enum": ["top", "bottom"],
+      "default": "top",
+      "description": "Which enclosure panel to display"
+    },
+    "pattern": {
+      "type": "string",
+      "description": "Pattern identifier (e.g. 'spiral', 'rings', 'stripes')"
+    },
+    "invert": {
+      "type": "boolean",
+      "default": false,
+      "description": "Swap color 1 and color 2"
+    },
+    "showVents": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show open/vent hexes"
+    },
+    "centerX": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 50,
+      "description": "Pattern center X position (0-100%)"
+    },
+    "centerY": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 50,
+      "description": "Pattern center Y position (0-100%)"
+    },
+    "colors": {
+      "type": "object",
+      "description": "Color configuration",
+      "properties": {
+        "base": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Base/border color (hex)"
+        },
+        "color1": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Primary pattern color (hex)"
+        },
+        "color2": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Secondary pattern color (hex)"
+        }
+      }
+    },
+    "params": {
+      "type": "object",
+      "description": "Pattern-specific parameters (keys and values depend on the selected pattern)",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "number" },
+          { "type": "string" }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false
+}

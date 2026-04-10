@@ -627,6 +627,121 @@ function Slider({ label, value, min, max, step, labels, snap, snapRange, onChang
   );
 }
 
+// --- Preset serialization ---
+function serializePreset({ panel, pattern, inv, showVents, centerX, centerY, color1, color2, baseColor, params }) {
+  return JSON.stringify({
+    panel,
+    pattern,
+    invert: inv,
+    showVents,
+    centerX,
+    centerY,
+    colors: { base: baseColor, color1, color2 },
+    params: { ...params },
+  }, null, 2);
+}
+
+function deserializePreset(json) {
+  const d = JSON.parse(json);
+  if (!d || typeof d !== 'object') throw new Error('Invalid preset: expected an object');
+  if (!d.pattern || !PATTERNS[d.pattern]) throw new Error(`Unknown pattern: "${d.pattern}"`);
+  // Validate pattern params
+  const pat = PATTERNS[d.pattern];
+  if (d.params && pat.params) {
+    for (const key of Object.keys(d.params)) {
+      const def = pat.params.find(p => p.n === key);
+      if (!def) throw new Error(`Unknown parameter "${key}" for pattern "${d.pattern}"`);
+      const v = d.params[key];
+      if (typeof v === 'number' && (v < def.min || v > def.max)) {
+        throw new Error(`Parameter "${key}" value ${v} out of range [${def.min}, ${def.max}]`);
+      }
+    }
+  }
+  return d;
+}
+
+// --- Load/Save modal ---
+function PresetModal({ onClose, currentJson, onLoad }) {
+  const [text, setText] = useState('');
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(currentJson).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleLoad = () => {
+    setError('');
+    try {
+      const preset = deserializePreset(text);
+      onLoad(preset);
+      onClose();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 1000,
+    }} onClick={onClose}>
+      <div style={{
+        background: 'var(--color-background-secondary, #16213e)', borderRadius: 'var(--border-radius-lg)',
+        border: '1px solid var(--color-border-secondary)', padding: 24, width: 480, maxWidth: '90vw',
+        maxHeight: '80vh', overflow: 'auto',
+      }} onClick={e => e.stopPropagation()}>
+        <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 600 }}>Load / Save Preset</h3>
+
+        <button onClick={handleCopy} style={{
+          width: '100%', padding: '8px 14px', fontSize: 13, cursor: 'pointer',
+          background: copied ? '#2a6e3f' : 'var(--color-background-info)',
+          color: 'var(--color-text-info)', border: 'none', borderRadius: 'var(--border-radius-md)',
+          fontFamily: 'var(--font-sans, system-ui)', fontWeight: 500,
+        }}>{copied ? 'Copied!' : 'Copy current settings to clipboard (JSON)'}</button>
+
+        <hr style={{ border: 'none', borderTop: '1px solid var(--color-border-secondary)', margin: '18px 0' }} />
+
+        <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 8 }}>
+          Load settings from JSON data:
+        </div>
+        <textarea
+          value={text} onChange={e => { setText(e.target.value); setError(''); }}
+          placeholder="Paste JSON preset here..."
+          style={{
+            width: '100%', height: 140, fontSize: 12, padding: 10,
+            borderRadius: 'var(--border-radius-md)', border: '1px solid var(--color-border-secondary)',
+            background: 'var(--color-background-primary)', color: 'var(--color-text-primary)',
+            fontFamily: 'var(--font-mono, monospace)', resize: 'vertical',
+            boxSizing: 'border-box',
+          }}
+        />
+        {error && (
+          <div style={{ fontSize: 12, color: '#ff6b6b', marginTop: 6 }}>{error}</div>
+        )}
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{
+            padding: '7px 18px', fontSize: 13, cursor: 'pointer',
+            background: 'var(--color-background-primary)', color: 'var(--color-text-primary)',
+            border: '1px solid var(--color-border-secondary)', borderRadius: 'var(--border-radius-md)',
+            fontFamily: 'var(--font-sans, system-ui)',
+          }}>Cancel</button>
+          <button onClick={handleLoad} style={{
+            padding: '7px 18px', fontSize: 13, cursor: 'pointer',
+            background: 'var(--color-background-info)', color: 'var(--color-text-info)',
+            border: 'none', borderRadius: 'var(--border-radius-md)',
+            fontFamily: 'var(--font-sans, system-ui)', fontWeight: 500,
+          }}>Load</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- Main app ---
 export default function App() {
   const canvasRef = useRef(null);
@@ -640,9 +755,38 @@ export default function App() {
   const [color1, setColor1] = useState(DEFAULT_COLOR1);
   const [color2, setColor2] = useState(DEFAULT_COLOR2);
   const [baseColor, setBaseColor] = useState(DEFAULT_BASE);
+  const [showPresetModal, setShowPresetModal] = useState(false);
+  const skipParamInit = useRef(false);
 
-  // Initialize params when pattern changes
+  const loadPreset = useCallback((d) => {
+    if (d.pattern && PATTERNS[d.pattern]) {
+      // Build params: start from pattern defaults, overlay with preset values
+      const pat = PATTERNS[d.pattern];
+      const init = {};
+      if (pat.params) for (const pr of pat.params) init[pr.n] = pr.v;
+      if (d.params) Object.assign(init, d.params);
+      setParams(init);
+      skipParamInit.current = true;
+      setPattern(d.pattern);
+    }
+    if (d.panel) setPanel(d.panel);
+    if (typeof d.invert === 'boolean') setInv(d.invert);
+    if (typeof d.showVents === 'boolean') setShowVents(d.showVents);
+    if (typeof d.centerX === 'number') setCenterX(d.centerX);
+    if (typeof d.centerY === 'number') setCenterY(d.centerY);
+    if (d.colors) {
+      if (d.colors.base) setBaseColor(d.colors.base);
+      if (d.colors.color1) setColor1(d.colors.color1);
+      if (d.colors.color2) setColor2(d.colors.color2);
+    }
+  }, []);
+
+  // Initialize params when pattern changes (skip once after preset load)
   useEffect(() => {
+    if (skipParamInit.current) {
+      skipParamInit.current = false;
+      return;
+    }
     const p = PATTERNS[pattern];
     if (p?.params) {
       const init = {};
@@ -778,7 +922,7 @@ export default function App() {
           <input type="checkbox" checked={showVents} onChange={e => setShowVents(e.target.checked)} />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 8, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <label style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Base</label>
             <input type="color" value={baseColor} onChange={e => setBaseColor(e.target.value)}
@@ -794,8 +938,23 @@ export default function App() {
             <input type="color" value={color2} onChange={e => setColor2(e.target.value)}
               style={{ width: 26, height: 22, padding: 0, border: '1px solid var(--color-border-secondary)', borderRadius: 3, cursor: 'pointer', background: 'none' }} />
           </div>
+          <div style={{ flex: 1 }} />
+          <button onClick={() => setShowPresetModal(true)} style={{
+            padding: '5px 14px', fontSize: 12, cursor: 'pointer',
+            background: 'var(--color-background-primary)', color: 'var(--color-text-primary)',
+            border: '0.5px solid var(--color-border-secondary)', borderRadius: 'var(--border-radius-md)',
+            fontFamily: 'var(--font-sans, system-ui)', fontWeight: 500, whiteSpace: 'nowrap',
+          }}>Load / Save</button>
         </div>
       </div>
+
+      {showPresetModal && (
+        <PresetModal
+          onClose={() => setShowPresetModal(false)}
+          currentJson={serializePreset({ panel, pattern, inv, showVents, centerX, centerY, color1, color2, baseColor, params })}
+          onLoad={loadPreset}
+        />
+      )}
 
       {/* Pattern selector */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
