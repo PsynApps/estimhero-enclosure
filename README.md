@@ -2,6 +2,8 @@
 
 A browser-based tool for designing two-color hexagonal patterns on the [Estim Hero](https://shop.impudicus.net/) electrostimulation device enclosure. Preview patterns in real-time on the actual panel geometry, then use the included 3MF files to print.
 
+**The pattern designer can be accessed at: https://psynapps.github.io/estimhero-enclosure/**
+
 ## About
 
 The Estim Hero enclosure has top and bottom panels covered in a 33x14 grid of flat-top hexagons. Each hex face can be printed in one of two colors using multi-material 3D printing, with a third base color for borders. Some hex positions are open for ventilation and others are absent for screw mounts and rubber feet.
@@ -23,10 +25,6 @@ This is an example enclosure printed using patterns produced by this tool (thank
 - Per-pattern parameter sliders with sensible defaults
 - Global controls for center position, color inversion, and vent visibility
 - Load/Save presets: copy your current settings as JSON to share with others, or paste in a preset to load it
-
-## Demo
-
-The pattern designer can be found at **https://psynapps.github.io/estimhero-enclosure/**.
 
 ## Development
 
